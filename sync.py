@@ -2,6 +2,8 @@
 
 import sys
 import os
+import hashlib
+import json
 
 def makeDir(directory):
 	os.makedirs(directory)
@@ -46,9 +48,8 @@ def check(directory_1,directory_2):
 
 
 def makeSync(path):
-
 	a = open(path,"w+")
-
+	a.close()
 
 
 def checkSyncFile(directory_1,directory_2):
@@ -68,6 +69,45 @@ def checkSyncFile(directory_1,directory_2):
 		pass
 	else:
 		makeSync(path2)	
+
+	return True	
+
+
+def updateSync(directory):
+	''' go through the list of files in the directory, get their content and write to .sync file in json format'''
+
+	# how to create digest
+	#hash_object = hashlib.sha256(b'Hello World')
+	#hex_dig = hash_object.hexdigest()
+	
+	#fileNames = os.listdir(directory)
+
+	# step 1: loop though each file and then call the digest method. 
+	for root,dirs,files in os.walk('./' + directory,topdown=True):
+
+		for f in files:
+
+
+			if(f == ".sync"):
+				continue
+
+			# open a file
+			openedFile = open(directory + "/" + f, 'r')
+			text = openedFile.read()
+
+
+			# step 2: Store the digest method in the .sync file in json format
+			hash_object = hashlib.sha256(text.encode())
+			hex_dig = hash_object.hexdigest()
+			#print(hex_dig)
+
+			dictionary = {f: [[1,1],[3,4]]}
+
+			with open(directory + "/.sync", 'w') as outfile:
+				json.dump(dictionary, outfile,indent = 4)
+
+
+			# step3: go back to step 1 till no more files left
 
 
 
@@ -92,9 +132,18 @@ def main():
 	if(not result):
 		return
 
-
+	# check if the sync file is created well
 	syncExists = checkSyncFile(directory_1,directory_2)
 	
+	if(not syncExists):
+		print("There were errors when creating the .sync file. Please try again!")
+		return
+
+
+	# now .... examine all the files present in the directories individually.
+	# and use SHA 256 to create a digest and APPEND to the .sync file in that dir
+
+	updateSync(directory_1)
 
 
 
