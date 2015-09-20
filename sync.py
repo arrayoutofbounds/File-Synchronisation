@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-
+import os.path
 import sys
 import os
 import hashlib
 import json
+import time
+from email import utils
 
 def makeDir(directory):
 	os.makedirs(directory)
@@ -85,9 +87,10 @@ def updateSync(directory):
 	# step 1: loop though each file and then call the digest method. 
 	for root,dirs,files in os.walk('./' + directory,topdown=True):
 
+		# this got the files in the directory we entered
 		for f in files:
 
-
+			# if the file is a .sync file then do get information from it. i.e skip it as it does not need to be read.
 			if(f == ".sync"):
 				continue
 
@@ -100,9 +103,16 @@ def updateSync(directory):
 			hash_object = hashlib.sha256(text.encode())
 			hex_dig = hash_object.hexdigest()
 			#print(hex_dig)
+			last_modified_date = time.strftime("%Y-%m-%d %H:%M:%S %z", time.gmtime(os.path.getmtime(directory + "/" + f)))
 
-			dictionary = {f: [[1,1],[3,4]]}
+			#print (utils.formatdate(os.path.getmtime(directory + "/" + f))) # can use this for getting time zone also
 
+			print(last_modified_date)
+
+			dictionary = {f: [last_modified_date,1]}
+
+
+			# open the .sync file in the directory given and then write to it in json format
 			with open(directory + "/.sync", 'w') as outfile:
 				json.dump(dictionary, outfile,indent = 4)
 
