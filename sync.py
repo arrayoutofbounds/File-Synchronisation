@@ -12,6 +12,8 @@ from datetime import datetime
 
 import datetime
 
+import shutil
+
 def makeDir(directory):
 	os.makedirs(directory)
 
@@ -261,6 +263,52 @@ def updateSync(directory):
 		with open(directory +  os.sep + ".sync", 'w') as outfile:
 				json.dump(dictionary, outfile,indent = 4)
 
+def move(directory_1,directory_2,key):
+
+	shutil.copy(directory_1 + os.sep + key,directory_2)
+
+def mergeMissingFiles(directory_1,directory_2,dictionary_1,dictionary_2):
+
+	for key in dictionary_1.keys():
+
+		if key in dictionary_2:
+			pass
+		else:
+			# copy to directory 2 and and key,value to .sync file of the 2nd dir
+			move(directory_1,directory_2,key)
+			
+
+	for key in dictionary_2.keys():
+	
+		if key in dictionary_1:
+			pass
+		else:
+			move(directory_2,directory_1,key)	
+
+			
+
+def merge(directory_1,directory_2):
+
+	''' the purpose of this method is to merge the files on the 2 directories give'''
+
+	#step 1. open the sync file from both dirs
+	with open(directory_1 + os.sep + '.sync') as g:
+		#dictionary = json.load(g)
+		try: 
+			dictionary_1 = json.load(g)
+		except ValueError: 
+			#print("error caught")
+			dictionary_1 = {}
+
+	with open(directory_2 + os.sep + '.sync') as h:
+
+		try:
+			dictionary_2 = json.load(h)
+		except ValueError:
+			dictionary_2 = {}
+
+	# now do the sync for any files that are not in either directories
+	mergeMissingFiles(directory_1, directory_2, dictionary_1,dictionary_2)		
 
 def main():
 	
@@ -296,6 +344,8 @@ def main():
 
 	updateSync(directory_1)
 	updateSync(directory_2)
+
+	merge(directory_1,directory_2)
 
 
 
