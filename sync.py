@@ -6,6 +6,9 @@ import hashlib
 import json
 import time
 from email import utils
+from datetime import datetime as dt
+
+from datetime import datetime
 
 def makeDir(directory):
 	os.makedirs(directory)
@@ -91,13 +94,15 @@ def addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f):
 		values = dictionary[f]
 		latestValues = values[0]
 		latestDigest = latestValues[1]
-		latestModifiedTime = latestValues[0]
+		storedModifiedTime = latestValues[0]
 		
 		if(latestDigest == hex_dig):
 			# old value is same as new value. So look at modification time now.
-			if(latestModifiedTime == last_modified_date):
+
+
+			if(storedModifiedTime == last_modified_date):
 				#if the two strings are equal then the time also must be the same
-				pass
+				latestValues[0] = last_modified_date
 			else:
 				# then the times are different, then replace the latest time (which is the last_modified_time that was passed in)
 				# latest values are known
@@ -170,17 +175,33 @@ def updateSync(directory):
 			hash_object = hashlib.sha256(text.encode())
 			hex_dig = hash_object.hexdigest()
 			#print(hex_dig)
-			last_modified_date = time.strftime("%Y-%m-%d %H:%M:%S %z", time.gmtime(os.path.getmtime(directory + os.sep + f)))
+			
+			#last_modified_date = time.strftime("%y %m %d %T %z", time.gmtime(os.path.getmtime(directory + os.sep + f)))
+			#print(last_modified_date)
 
 
 			#print (utils.formatdate(os.path.getmtime(directory + "/" + f))) # can use this for getting time zone also
 
 			# for testing
-			#print(last_modified_date)
+			#print(last_modified_date + " " + f )
+
+			try:
+				mtime = os.path.getmtime(directory + os.sep + f)
+			except OSError:
+				mtime = 0
+
+			last_modified_date2 = dt.fromtimestamp(mtime)
+			last_modified_date2 = last_modified_date2.replace(microsecond=0) # this truncates the microseconds .......for obvious reasons.
+			last_modified_date2 = str(last_modified_date2) + " +1200" # adds a 1200 to the end....idk why the hell...it was shown in the requirements
+
+			# also converted to string above so it can be storable in json
+
+			#print(last_modified_date2)
+
 
 			# now call the check function. params to pass in are : new hashed value, the dictionary, file name
 			# all params in python are passed as reference
-			dictionary = addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f)
+			dictionary = addToLocalSyncFile(hex_dig,last_modified_date2,dictionary,f)
 
 
 			#dictionary[f] = [last_modified_date,hex_dig]  this is a useless line
