@@ -10,6 +10,8 @@ from datetime import datetime as dt
 
 from datetime import datetime
 
+import datetime
+
 def makeDir(directory):
 	os.makedirs(directory)
 
@@ -122,6 +124,48 @@ def addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f):
 
 	return dictionary
 
+def checkForDeletedFiles(directory,dictionary):
+	''' this will loop through all the keys in the dictionary and from the .sync file. Any miss will signal that the file was deleted'''
+
+	# step 1 = loop through directory and get list of files
+	# step 2 = loop through all keys in dict
+	# step 3 = if key in dict but NOT IN list of files, then it is deleted. So edit the dictionary. Since it is a reference....no need to return it.
+
+
+	listOfFiles = []
+	listOfKeys = []
+
+	#step 1
+	for root,dirs,files in os.walk('.' + os.sep + directory,topdown=True):
+
+		for f in files:
+			if(f == ".sync"):
+				continue	
+			listOfFiles.append(f)
+
+	
+	#step 2
+	for key in dictionary.keys():
+		listOfKeys.append(key)
+
+	#step 3
+	for key in listOfKeys:
+
+		if key in listOfFiles:
+			# then file is not deleted
+			# carry on by doing nothing
+			pass
+		else:
+			# the file is obviously deleted because it is not there in dir but is there in sync dictionary
+			# hence add the current time and the "deleted" keyword
+			now = datetime.datetime.now()
+			now = now.replace(microsecond=0)
+
+			dictionary[key] = [[str(now),"deleted"]] + dictionary[key]
+
+	return dictionary		
+	
+
 
 
 def updateSync(directory):
@@ -213,7 +257,9 @@ def updateSync(directory):
 
 
 			# step3: go back to step 1 till no more files left
-
+		dictionary = checkForDeletedFiles(directory,dictionary)	
+		with open(directory +  os.sep + ".sync", 'w') as outfile:
+				json.dump(dictionary, outfile,indent = 4)
 
 
 def main():
