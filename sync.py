@@ -153,17 +153,28 @@ def checkForDeletedFiles(directory,dictionary):
 	#step 3
 	for key in listOfKeys:
 
-		if key in listOfFiles:
-			# then file is not deleted
-			# carry on by doing nothing
-			pass
-		else:
-			# the file is obviously deleted because it is not there in dir but is there in sync dictionary
-			# hence add the current time and the "deleted" keyword
+		value = dictionary[key]
+		latestValue = value[0]
+		digest = latestValue[1]
+
+		if (digest == "deleted"):
+			# then just change the time to the current time as the entry for deletion already exists
 			now = datetime.datetime.now()
 			now = now.replace(microsecond=0)
+			latestValue[0] = str(now)
+		else:	
+			# deleted string is not there
+			if key in listOfFiles:
+				# then file is not deleted
+				# carry on by doing nothing
+				pass
+			else:
+				# the file is obviously deleted because it is not there in dir but is there in sync dictionary
+				# hence add the current time and the "deleted" keyword
+				now = datetime.datetime.now()
+				now = now.replace(microsecond=0)
 
-			dictionary[key] = [[str(now),"deleted"]] + dictionary[key]
+				dictionary[key] = [[str(now),"deleted"]] + dictionary[key]
 
 	return dictionary		
 	
@@ -265,26 +276,82 @@ def updateSync(directory):
 
 def move(directory_1,directory_2,key):
 
+	print(directory_1)
+	print(directory_2)
+	print(key)
+
 	shutil.copy(directory_1 + os.sep + key,directory_2)
+
+def dumpJson(dictionary,directory):
+	with open(directory +  os.sep + ".sync", 'w') as outfile:
+		json.dump(dictionary, outfile,indent = 4)
 
 def mergeMissingFiles(directory_1,directory_2,dictionary_1,dictionary_2):
 
 	for key in dictionary_1.keys():
 
-		if key in dictionary_2:
+		a = dictionary_1[key]
+		b = a[0]
+		c = b[1]
+
+		if(c == "deleted"):
+			continue
+
+		print(key + " " +  directory_1)
+
+		try:
+			value = dictionary_2[key]
+			latestValue = value[0]
+			latestDigest = latestValue[1]
+		except ValueError:
+			latestDigest = "nothing"	
+
+		if key in dictionary_2 and (latestDigest != "deleted") :
 			pass
 		else:
 			# copy to directory 2 and and key,value to .sync file of the 2nd dir
 			move(directory_1,directory_2,key)
-			
+
+			# get latest values for the key that is to be copied
+			values = dictionary_1[key]
+			latestValue = values[0]
+			storedModifiedTime = latestValue[0]
+			latestDigest = latestValue[1]
+
+			dictionary_2[key] = [[storedModifiedTime,latestDigest]]
+
 
 	for key in dictionary_2.keys():
+
+		d = dictionary_2[key]
+		e = d[0]
+		f = e[1]
+
+		if(f == "deleted"):
+			continue
+
+		print(key + " " + directory_2)	
+		try:
+			value = dictionary_1[key]
+			latestValue = value[0]
+			latestDigest = latestValue[1]
+		except:
+			latestDigest = "nothing"
 	
-		if key in dictionary_1:
+		if key in dictionary_1 and (latestDigest != "deleted"):
 			pass
 		else:
 			move(directory_2,directory_1,key)	
 
+			values = dictionary_2[key]
+			latestValue = values[0]
+			storedModifiedTime = latestValue[0]
+			latestDigest = latestValue[1]
+
+			dictionary_1[key] = [[storedModifiedTime,latestDigest]]
+
+	dumpJson(dictionary_1,directory_1)
+	dumpJson(dictionary_2,directory_2)
 			
 
 def merge(directory_1,directory_2):
