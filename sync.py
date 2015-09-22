@@ -280,7 +280,7 @@ def move(directory_1,directory_2,key):
 	print(directory_2)
 	print(key)
 
-	shutil.copy(directory_1 + os.sep + key,directory_2)
+	shutil.copy2(directory_1 + os.sep + key,directory_2)
 
 def dumpJson(dictionary,directory):
 	with open(directory +  os.sep + ".sync", 'w') as outfile:
