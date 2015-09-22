@@ -128,16 +128,20 @@ def addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f):
 
 	return dictionary
 
-def checkForDeletedFiles(directory,dictionary):
+def dumpJson(dictionary,directory):
+	with open(directory +  os.sep + ".sync", 'w') as outfile:
+		json.dump(dictionary, outfile,indent = 4)	
+
+def checkForDeletedFiles(directory,dictionary,dir2):
 	''' this will loop through all the keys in the dictionary and from the .sync file. Any miss will signal that the file was deleted'''
 
 	# step 1 = loop through directory and get list of files
 	# step 2 = loop through all keys in dict
-	# step 3 = if key in dict but NOT IN list of files, then it is deleted. So edit the dictionary. Since it is a reference....no need to return it.
+	# step 3 = if key in dict but NOT IN list of files, then it is deleted. So edit the dictionary. 
 
 
-	listOfFiles = []
-	listOfKeys = []
+	listOfFiles = [] # that are in the dir
+	listOfKeys = [] # from the sync file of the dir
 
 	#step 1
 	for root,dirs,files in os.walk('.' + os.sep + directory,topdown=True):
@@ -190,12 +194,29 @@ def checkForDeletedFiles(directory,dictionary):
 
 				dictionary[key] = [[now,"deleted"]] + dictionary[key]
 
+
+				# the file in the other directory has to also be deleted.
+				with open(dir2 + os.sep + '.sync') as g:
+					try: 
+						dict2 = json.load(g)
+					except ValueError: 
+						dict2 = {}	
+
+
+				for root,dirs,files in os.walk('.' + os.sep + dir2,topdown=True):
+
+					if key in files:
+						os.remove(dir2 + os.sep + key)
+						dict2[key] = [[now,"deleted"]] + dict2[key]
+						dumpJson(dict2,dir2)	
+
+
 	return dictionary		
 	
 
 
 
-def updateSync(directory):
+def updateSync(directory,dir2):
 	''' go through the list of files in the directory, get their content and write to .sync file in json format'''
 
 	# how to create digest
@@ -297,7 +318,8 @@ def updateSync(directory):
 			# step3: go back to step 1 till no more files left
 
 		# check for deleted files and then json dump to file again to update it as something may have been deleted	
-		dictionary = checkForDeletedFiles(directory,dictionary)	
+		dictionary = checkForDeletedFiles(directory,dictionary,dir2)	
+
 		with open(directory +  os.sep + ".sync", 'w') as outfile:
 				json.dump(dictionary, outfile,indent = 4)
 
@@ -311,9 +333,7 @@ def move(directory_1,directory_2,key):
 	# this copies the metadata as well
 	shutil.copy2(directory_1 + os.sep + key,directory_2)
 
-def dumpJson(dictionary,directory):
-	with open(directory +  os.sep + ".sync", 'w') as outfile:
-		json.dump(dictionary, outfile,indent = 4)
+
 
 def mergeMissingFiles(directory_1,directory_2,dictionary_1,dictionary_2):
 
@@ -539,10 +559,9 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 
 					# should add a new entry into the dict, hence the sync file
 					dictionary_2[key] = [[mod_time,digest]] + dictionary_2[key]
- 
- 					move(directory_1,directory_2,key) # copy the latest file from dir 1 to dir 2
 
 
+					move(directory_1,directory_2,key) # copy the latest file from dir 1 to dir2
 
 					#((dictionary_2[key])[0])[0] = str(time_1)
 
@@ -636,8 +655,8 @@ def main():
 	# now .... examine all the files present in the directories individually.
 	# and use SHA 256 to create a digest and APPEND to the .sync file in that dir
 
-	updateSync(directory_1)
-	updateSync(directory_2)
+	updateSync(directory_1,directory_2) #dir 1 updated and deleted files checked
+	updateSync(directory_2,directory_1) # same as above but for dir 2
 
 	merging(directory_1,directory_2)
 
