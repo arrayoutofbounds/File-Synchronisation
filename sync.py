@@ -89,16 +89,17 @@ def addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f,directory):
 	# purpose of this function is to update the .sync file.
 
 	#print(dictionary)
+	# get the digest from the dictionary
+	values = dictionary[f]
+	latestValues = values[0]
+	latestDigest = latestValues[1]
+	storedModifiedTime = latestValues[0]
 
 	# check if the file name is in the dictionary as a key
 	if f in dictionary:
 		# then key exists, so first check the digest to see if same. If they are same then check mod time. else add to dictionary
 
-		# get the digest from the dictionary
-		values = dictionary[f]
-		latestValues = values[0]
-		latestDigest = latestValues[1]
-		storedModifiedTime = latestValues[0]
+
 		
 		if(latestDigest == hex_dig):
 			# old value is same as new value. So look at modification time now.
@@ -383,7 +384,7 @@ def mergeMissingFiles(directory_1,directory_2,dictionary_1,dictionary_2):
 			latestDigest = latestValue[1]
 
 			# updates the dictionary
-			dictionary_2[key] = [[storedModifiedTime,latestDigest]]
+			dictionary_2[key] = [[storedModifiedTime,latestDigest]] + dictionary_2[key]
 
 
 	# same as the above for loop, except this moves files that are not in dir 1 but are in dir 2 to dir 1.
@@ -416,7 +417,7 @@ def mergeMissingFiles(directory_1,directory_2,dictionary_1,dictionary_2):
 			latestDigest = latestValue[1]
 
 			# update the dir 1 dictionary
-			dictionary_1[key] = [[storedModifiedTime,latestDigest]]
+			dictionary_1[key] = [[storedModifiedTime,latestDigest]] + dictionary_1[key]
 
 
 	# update the sync files on both dirs
@@ -496,8 +497,7 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 			
 			# if dictionary 2 has a length of 2 or more then it can have the same version as that of most recent of dict 1.
 
-			matchFound = False # this is there to check whether a match is found for any of the previous versions of files on opp dir
-
+			
 			if(len(values2) >= 2):
 				# then we can check the 1st index, which is the previous version, with the current version of dir 1
 
@@ -527,7 +527,7 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 
 					dictionary_1[key] = [[modified_date,hex_dig]] + dictionary_1[key]
 
-					matchFound = True # this is set true as there is a file that is a earlier version in the other dir
+					
 
 			if(len(values1)>=2):
 
@@ -556,7 +556,7 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 
 					dictionary_2[key] = [[modified_date,hex_dig]] + dictionary_2[key]
 
-					matchFound = True # set true as there is a file in dir 1 that is an earlier version as current of dir 2
+					
 
 			# now the if statements has been run to ensure that if there were previous versions then they have been updated with the sync file
 			# however, if both the if statements are not fulfilled because the digests are both unique and there is nothing with the same content anywhere
@@ -566,44 +566,57 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 
 			# so if the match found variable is false, then neither dir was able to find a file that was matching in the other dir
 
-			if (not matchFound): # if both files are unique amongst the SET of all files contents from opposite directories then just get the file with the latest time
+			numberOfValues_dir1 = len(values1)
+			numberOfValues_dir2 = len(values2)
+
+
+
+			if (numberOfValues_dir1 > 1 and numberOfValues_dir2 > 1): # if both files are unique amongst the SET of all files contents from opposite directories then just get the file with the latest time
 
 			# both lists bigger than 1
 			# check index 1 
 			# if they are both same tehn top one ins diff....then check time
 
-				time_1 = datetime.datetime.strptime(last_modified_time_1, "%Y-%m-%d %H:%M:%S %z")
-				time_2 = datetime.datetime.strptime(last_modified_time_2, "%Y-%m-%d %H:%M:%S %z")
+				value_at_index_1 = values1[0]
+				value_at_index_2 = values2[0]
 
-				if(time_1 > time_2):
-
-					# from dir 1 as it is newer
-					mod_time = ((dictionary_1[key])[0])[0]
-					digest = ((dictionary_1[key])[0])[1]
+				mod_time_first_element_dir1 = (values1[0])[0]
+				mod_time_first_element_dir2 = (values2[0])[0]
 
 
-					# should add a new entry into the dict, hence the sync file
-					dictionary_2[key] = [[mod_time,digest]] + dictionary_2[key]
+				if(value_at_index_1[1] == value_at_index_2[1]):
+					# then the values at index 0 are different. Hence look at the modified time and replace it with the latest modified time
+
+					time_1 = datetime.datetime.strptime(mod_time_first_element_dir1, "%Y-%m-%d %H:%M:%S %z")
+					time_2 = datetime.datetime.strptime(mod_time_first_element_dir2, "%Y-%m-%d %H:%M:%S %z")
+
+					if(time_1 > time_2):
+						# then time 1 is closer to current time
+
+						# from dir 1 as it is newer
+						mod_time = mod_time_first_element_dir1
+						digest = (values1[0])[1]
 
 
-					move(directory_1,directory_2,key) # copy the latest file from dir 1 to dir2
+						# should add a new entry into the dict, hence the sync file
+						dictionary_2[key] = [[mod_time,digest]] + dictionary_2[key]
 
-					#((dictionary_2[key])[0])[0] = str(time_1)
+						# copy the latest file from dir 1 to dir2
+						move(directory_1,directory_2,key) 
 
+					elif(time_2 > time_1):
 
-				elif(time_2 > time_1):
+						mod_time = mod_time_first_element_dir2
+						digest = (values2[0])[1]
 
-					mod_time = ((dictionary_2[key])[0])[0]
-					digest = ((dictionary_2[key])[0])[1]
+						# should add a new entry into the dict, hence the sync file
+						dictionary_1[key] = [[mod_time,digest]] + dictionary_1[key]
 
-					# should add a new entry into the dict, hence the sync file
-					dictionary_1[key] = [[mod_time,digest]] + dictionary_1[key]
+						move(directory_2,directory_1,key) # copy the latest file from dir 2 to dir 1
 
-					move(directory_2,directory_1,key) # copy the latest file from dir 2 to dir 1
+					else:
+						pass
 
-
-
-					#((dictionary_1[key])[0])[0] = str(time_2)
 				else:
 					pass
 
