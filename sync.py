@@ -508,25 +508,26 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 				# we have list of values for a given key	
 
 				# get  earlier digest of 2nd dir and check if it matches 
-				for j in listValues:
 
-					if(digest_1 == j[1]):
+				j = listValues[0]
 
-						# then the first version of dir 1 is same as the currently examined but previous in dir 2
-						# so copy over the file with the current key to dir 1 and then update the sync file
+				if(digest_1 == j[1]):
 
-						move(directory_2,directory_1,key) # this copies the file from dir 2 to dir 1 with all the metadata
+					# then the first version of dir 1 is same as the currently examined but previous in dir 2
+					# so copy over the file with the current key to dir 1 and then update the sync file
 
-						# update the .sync file. Update the dictionary. The dict will be json dumped at the end of this method. so its updated the .sync
-						# you have to
-						# put the [modified time, digest] to the .sync file of the directory_1
+					move(directory_2,directory_1,key) # this copies the file from dir 2 to dir 1 with all the metadata
 
-						hex_dig = j[1]
-						modified_date = j[0]
+					# update the .sync file. Update the dictionary. The dict will be json dumped at the end of this method. so its updated the .sync
+					# you have to
+					# put the [modified time, digest] to the .sync file of the directory_1
 
-						dictionary_1[key] = [[modified_date,hex_dig]] + dictionary_1[key]
+					hex_dig = j[1]
+					modified_date = j[0]
 
-						matchFound = True # this is set true as there is a file that is a earlier version in the other dir
+					dictionary_1[key] = [[modified_date,hex_dig]] + dictionary_1[key]
+
+					matchFound = True # this is set true as there is a file that is a earlier version in the other dir
 
 			if(len(values1)>=2):
 
@@ -537,26 +538,25 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 				
 				# we have list of values for a given key	
 
-				# get  earlier digest of 2nd dir and check if it matches 
-				for j in listValues:
+				j = listValues[0]
 
-					if(digest_2 == j[1]):
+				if(digest_2 == j[1]):
 
-						# then the first version of dir 1 is same as the currently examined but previous in dir 2
-						# so copy over the file with the current key to dir 1 and then update the sync file
+					# then the first version of dir 1 is same as the currently examined but previous in dir 2
+					# so copy over the file with the current key to dir 1 and then update the sync file
 
-						move(directory_1,directory_2,key) # this copies the file from dir 1 to dir 2 with all the metadata
+					move(directory_1,directory_2,key) # this copies the file from dir 1 to dir 2 with all the metadata
 
-						# update the .sync file. Update the dictionary. The dict will be json dumped at the end of this method. so its updated the .sync
-						# you have to
-						# put the [modified time, digest] to the .sync file of the directory_1
+					# update the .sync file. Update the dictionary. The dict will be json dumped at the end of this method. so its updated the .sync
+					# you have to
+					# put the [modified time, digest] to the .sync file of the directory_1
 
-						hex_dig = j[1]
-						modified_date = j[0]
+					hex_dig = j[1]
+					modified_date = j[0]
 
-						dictionary_2[key] = [[modified_date,hex_dig]] + dictionary_2[key]
+					dictionary_2[key] = [[modified_date,hex_dig]] + dictionary_2[key]
 
-						matchFound = True # set true as there is a file in dir 1 that is an earlier version as current of dir 2
+					matchFound = True # set true as there is a file in dir 1 that is an earlier version as current of dir 2
 
 			# now the if statements has been run to ensure that if there were previous versions then they have been updated with the sync file
 			# however, if both the if statements are not fulfilled because the digests are both unique and there is nothing with the same content anywhere
