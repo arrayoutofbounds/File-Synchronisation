@@ -83,7 +83,7 @@ def checkSyncFile(directory_1,directory_2):
 	return True	
 
 
-def addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f):
+def addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f,directory):
 	''' this function takes in the calculated hash value, last modification date, values in current .sycn file and the file name'''
 
 	# purpose of this function is to update the .sync file.
@@ -104,14 +104,17 @@ def addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f):
 			# old value is same as new value. So look at modification time now.
 
 
-			if(storedModifiedTime == last_modified_date):
+			if(storedModifiedTime != last_modified_date):
 				#if the two strings are equal then the time also must be the same
-				((dictionary[f])[0])[0] = last_modified_date
+				#((dictionary[f])[0])[0] = last_modified_date
 				#latestValues[0] = last_modified_date
-			else:
 				# then the times are different, then replace the latest time (which is the last_modified_time that was passed in)
 				# latest values are known
-				((dictionary[f])[0])[0] = last_modified_date
+				print(storedModifiedTime + "THIS")
+
+				# update the modified time of the file to the time from the stored sync file 
+				os.utime(directory + os.sep + f,(time.mktime(time.strptime(storedModifiedTime, "%Y-%m-%d %H:%M:%S %z")),time.mktime(time.strptime(storedModifiedTime, "%Y-%m-%d %H:%M:%S %z"))))
+				#((dictionary[f])[0])[0] = last_modified_date
 				#latestValues[0] = last_modified_date
 
 		else:
@@ -270,7 +273,7 @@ def updateSync(directory,dir2):
 
 			
 			last_modified_date = time.strftime("%Y-%m-%d %H:%M:%S %z", time.localtime(os.path.getmtime(directory + os.sep + f)))
-			
+
 			print(last_modified_date + " " + f + " " + directory)
 
 
@@ -304,7 +307,7 @@ def updateSync(directory,dir2):
 
 			#dictionary = addToLocalSyncFile(hex_dig,last_modified_date2,dictionary,f)
 
-			dictionary = addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f)
+			dictionary = addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f,directory)
 
 
 			#dictionary[f] = [last_modified_date,hex_dig]  this is a useless line
@@ -316,10 +319,12 @@ def updateSync(directory,dir2):
 
 
 			# step3: go back to step 1 till no more files left
+			print(last_modified_date)
 
 		# check for deleted files and then json dump to file again to update it as something may have been deleted	
 		dictionary = checkForDeletedFiles(directory,dictionary,dir2)	
 
+		print(dictionary)
 		with open(directory +  os.sep + ".sync", 'w') as outfile:
 				json.dump(dictionary, outfile,indent = 4)
 
@@ -338,6 +343,9 @@ def move(directory_1,directory_2,key):
 def mergeMissingFiles(directory_1,directory_2,dictionary_1,dictionary_2):
 
 	''' this method just ensure that any files that are missing in either directory are sent to the other dir'''
+
+	print(dictionary_1)
+	print(dictionary_2)
 
 	for key in dictionary_1.keys(): # go through the sync file for the first directory
 
@@ -447,23 +455,36 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 		if(digest_1 == digest_2):
 			# this means that the content of both the files is the same
 			# now check the modification times
+
+
 			time_1 = datetime.datetime.strptime(last_modified_time_1, "%Y-%m-%d %H:%M:%S %z")
 			time_2 = datetime.datetime.strptime(last_modified_time_2, "%Y-%m-%d %H:%M:%S %z")
+
+
+
 
 			# if time is greater than another then it is the earliest 
 			#print(time_1)
 			#print(time_2)
 			#print(time_1 > time_2)
 
+			#CHANGE MOD TIME OF FILE AND SYNC FILE
 			if(time_1 > time_2):
 				# then time 1 is closer to current time
 				# so set the time in the .sync files of both to that time
-				((dictionary_1[key])[0])[0] = str(time_1)
-				((dictionary_2[key])[0])[0] = str(time_1)
+				((dictionary_1[key])[0])[0] = str(time_1).replace("+12:00"," +1200")
+				((dictionary_2[key])[0])[0] = str(time_1).replace("+12:00"," +1200")
+
+				os.utime(directory_1 + os.sep + f,(time.mktime(time.strptime(last_modified_time_1, "%Y-%m-%d %H:%M:%S %z")),time.mktime(time.strptime(last_modified_time_1, "%Y-%m-%d %H:%M:%S %z"))))
+				os.utime(directory_2 + os.sep + f,(time.mktime(time.strptime(last_modified_time_1, "%Y-%m-%d %H:%M:%S %z")),time.mktime(time.strptime(last_modified_time_1, "%Y-%m-%d %H:%M:%S %z"))))
+
 			elif(time_2 > time_1):
 				# latest time is the time 2
-				((dictionary_1[key])[0])[0] = str(time_2)
-				((dictionary_2[key])[0])[0] = str(time_2)
+				((dictionary_1[key])[0])[0] = str(time_2).replace("+12:00"," +1200")
+				((dictionary_2[key])[0])[0] = str(time_2).replace("+12:00"," +1200")
+
+				os.utime(directory_1 + os.sep + f,(time.mktime(time.strptime(last_modified_time_2, "%Y-%m-%d %H:%M:%S %z")),time.mktime(time.strptime(last_modified_time_2, "%Y-%m-%d %H:%M:%S %z"))))
+				os.utime(directory_2 + os.sep + f,(time.mktime(time.strptime(last_modified_time_2, "%Y-%m-%d %H:%M:%S %z")),time.mktime(time.strptime(last_modified_time_2, "%Y-%m-%d %H:%M:%S %z"))))
 			else:
 				# they are both the same...so dont change anything
 				pass
@@ -547,6 +568,10 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 
 			if (not matchFound): # if both files are unique amongst the SET of all files contents from opposite directories then just get the file with the latest time
 
+			# both lists bigger than 1
+			# check index 1 
+			# if they are both same tehn top one ins diff....then check time
+
 				time_1 = datetime.datetime.strptime(last_modified_time_1, "%Y-%m-%d %H:%M:%S %z")
 				time_2 = datetime.datetime.strptime(last_modified_time_2, "%Y-%m-%d %H:%M:%S %z")
 
@@ -586,6 +611,9 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 	# load the dict in the .sync files for each
 
 	# the dict has been changed for each of the files present
+
+	print(dictionary_1)
+	print(dictionary_2)
 
 	with open(directory_1 +  os.sep + ".sync", 'w') as outfile:
 		json.dump(dictionary_1, outfile,indent = 4)
@@ -659,7 +687,6 @@ def main():
 	updateSync(directory_2,directory_1) # same as above but for dir 2
 
 	merging(directory_1,directory_2)
-
 
 
 
