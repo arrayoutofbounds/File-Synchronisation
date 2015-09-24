@@ -111,7 +111,7 @@ def addToLocalSyncFile(hex_dig,last_modified_date,dictionary,f,directory):
 				#latestValues[0] = last_modified_date
 				# then the times are different, then replace the latest time (which is the last_modified_time that was passed in)
 				# latest values are known
-				print(storedModifiedTime + "THIS")
+				#print(storedModifiedTime + "THIS")
 
 				# update the modified time of the file to the time from the stored sync file 
 				os.utime(directory + os.sep + f,(time.mktime(time.strptime(storedModifiedTime, "%Y-%m-%d %H:%M:%S %z")),time.mktime(time.strptime(storedModifiedTime, "%Y-%m-%d %H:%M:%S %z"))))
@@ -275,7 +275,7 @@ def updateSync(directory,dir2):
 			
 			last_modified_date = time.strftime("%Y-%m-%d %H:%M:%S %z", time.localtime(os.path.getmtime(directory + os.sep + f)))
 
-			print(last_modified_date + " " + f + " " + directory)
+			#print(last_modified_date + " " + f + " " + directory)
 
 
 			#print (utils.formatdate(os.path.getmtime(directory + "/" + f))) # can use this for getting time zone also
@@ -320,12 +320,12 @@ def updateSync(directory,dir2):
 
 
 			# step3: go back to step 1 till no more files left
-			print(last_modified_date)
+			#print(last_modified_date)
 
 		# check for deleted files and then json dump to file again to update it as something may have been deleted	
 		dictionary = checkForDeletedFiles(directory,dictionary,dir2)	
 
-		print(dictionary)
+		#print(dictionary)
 		with open(directory +  os.sep + ".sync", 'w') as outfile:
 				json.dump(dictionary, outfile,indent = 4)
 
@@ -345,8 +345,8 @@ def mergeMissingFiles(directory_1,directory_2,dictionary_1,dictionary_2):
 
 	''' this method just ensure that any files that are missing in either directory are sent to the other dir'''
 
-	print(dictionary_1)
-	print(dictionary_2)
+	#print(dictionary_1)
+	#print(dictionary_2)
 
 	for key in dictionary_1.keys(): # go through the sync file for the first directory
 
@@ -626,8 +626,8 @@ def syncDirs(directory_1, directory_2, dictionary_1,dictionary_2):
 
 	# the dict has been changed for each of the files present
 
-	print(dictionary_1)
-	print(dictionary_2)
+	#print(dictionary_1)
+	#print(dictionary_2)
 
 	with open(directory_1 +  os.sep + ".sync", 'w') as outfile:
 		json.dump(dictionary_1, outfile,indent = 4)
@@ -663,6 +663,8 @@ def merging(directory_1,directory_2):
 	# now that missing files have been copied over.
 	# merge the directories
 	syncDirs(directory_1, directory_2, dictionary_1,dictionary_2)
+
+
 
 def main():
 	
