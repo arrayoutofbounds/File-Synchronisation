@@ -43,15 +43,16 @@ def check(directory_1,directory_2):
 
 	# now check that dir1_exists and dir2_exists are true. If not then make the directory in another function and then return.
 
-	if(dir1_exists): # if dir exists and carry on else make it
-		pass
-	else:
-		makeDir(directory_1)
-
-	if(dir2_exists): # if dir exists then carry on else make it
-		pass
-	else:
+	if((dir1_exists== False) and (dir2_exists== False)): # if dir exists and carry on else make it
+		print("Neither directory exists")
+		return False
+	
+	if((dir1_exists==True) and (dir2_exists == False)):
 		makeDir(directory_2)
+
+
+	if((dir1_exists==False) and (dir2_exists == True)):
+		makeDir(directory_1)	
 	
 	return True
 
