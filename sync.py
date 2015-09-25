@@ -384,7 +384,7 @@ def mergeMissingFiles(directory_1,directory_2,dictionary_1,dictionary_2):
 			latestDigest = latestValue[1]
 
 			# updates the dictionary
-			dictionary_2[key] = [[storedModifiedTime,latestDigest]] + dictionary_2[key]
+			dictionary_2[key] = [[storedModifiedTime,latestDigest]] #+ dictionary_2[key]
 
 
 	# same as the above for loop, except this moves files that are not in dir 1 but are in dir 2 to dir 1.
@@ -417,7 +417,7 @@ def mergeMissingFiles(directory_1,directory_2,dictionary_1,dictionary_2):
 			latestDigest = latestValue[1]
 
 			# update the dir 1 dictionary
-			dictionary_1[key] = [[storedModifiedTime,latestDigest]] + dictionary_1[key]
+			dictionary_1[key] = [[storedModifiedTime,latestDigest]] #+ dictionary_1[key]
 
 
 	# update the sync files on both dirs
